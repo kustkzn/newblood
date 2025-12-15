@@ -1,4 +1,5 @@
 from Crypto.Util.Padding import pad
+from itertools import product
 import hashlib
 
 def get_key_word(user:str): 
@@ -9,22 +10,23 @@ def func(R:bytes, key:bytes):
     Rnew=b''
     for i in range(8):
         a=bytes([R[i] ^ key[i]])
-        a=hashlib.sha1(a).digest()[i]
+        a=bytes([hashlib.sha1(a).digest()[i]])
         Rnew+=a
     return Rnew
 
 def frenel(text:bytes, key:bytes):
-    textpadded=pad(text, 16)
+    if len(text)%16!=0:
+        text=pad(text, 16)
     ciphertext=b''
-    for i in range(0, len(textpadded), 16):
-        L=textpadded[i:i+8]
-        R=textpadded[i+8:i+16]
+    for i in range(0, len(text), 16):
+        L=text[i:i+8]
+        R=text[i+8:i+16]
         for j in range(8):
             keyj=key[-j:]+key[:-j]
             R=func(R, keyj)
             L = bytes(lb ^ rb for lb, rb in zip(L, R))
         ciphertext+=L+R
-    return ciphertext
+    return ciphertext.hex()
         
 
 
