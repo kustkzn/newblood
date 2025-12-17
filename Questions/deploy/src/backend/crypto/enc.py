@@ -2,10 +2,6 @@ from Crypto.Util.Padding import pad
 from itertools import product
 import hashlib
 
-def get_key_word(user:str): 
-    key='' #TODO
-    return key
-
 def func(R:bytes, key:bytes):
     Rnew=b''
     for i in range(8):
@@ -28,10 +24,8 @@ def frenel(text:bytes, key:bytes):
         ciphertext+=L+R
     return ciphertext.hex()
         
-
-
-def encrypt(question:str, user:str):
-    key=(get_key_word(user)).encode()
+def encrypt(question:str, key:str):
+    key=key.encode()
     question=question.encode()
     chipherquestion=frenel(question, key)
     return chipherquestion.hex()
