@@ -296,7 +296,7 @@
           html += '<ul>';
           user.questions_received.forEach(q => {
             html += `<li>
-              <div><strong>From ID:</strong> ${q.sender_id}</div>
+              <div><strong>From ID: Unknown</div>
               <div><strong>Question:</strong> ${q.text}</div>
               ${q.answer ? `<div><strong>Answer:</strong> ${q.answer}</div>` : '<em>No answer yet</em>'}
             </li>`;
@@ -322,7 +322,7 @@
           html += '<ul>';
           questions.forEach(q => {
             html += `<li>
-              <div><strong>From:</strong> <span class="user-link" onclick="viewUserProfile(${q.sender_id})">User ${q.sender_id}</span></div>
+              <div><strong>From: Unknown</div>
               <div><strong>Question:</strong> ${q.text}</div>`;
             if (q.answer) {
               html += `<div><strong>Answer:</strong> ${q.answer}</div>`;

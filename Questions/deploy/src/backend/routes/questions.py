@@ -34,7 +34,6 @@ def create_question(
         raise HTTPException(status_code=400, detail="Cannot ask yourself")
 
     new_question = Question(
-        sender_id=current_user.id,
         recipient_id=question_data.recipient_id,
         text=question_data.text
     )

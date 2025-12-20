@@ -38,7 +38,6 @@ def get_user_profile(user_id: int, db: Session = Depends(get_db)):
     for q in questions:
         masked_q = {
             "id": q.id,
-            "sender_id": q.sender_id,
             "recipient_id": q.recipient_id,
             "answer": q.answer,
             "answered_at": q.answered_at

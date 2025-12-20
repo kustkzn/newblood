@@ -6,7 +6,6 @@ class Question(Base):
     __tablename__ = "questions"
 
     id = Column(Integer, primary_key=True, index=True)
-    sender_id = Column(Integer, index=True)
     recipient_id = Column(Integer, index=True)
     text = Column(Text)
     answer = Column(Text, nullable=True)
