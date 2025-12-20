@@ -1,0 +1,24 @@
+diff --git a/Questions/deploy/src/backend/crypto/enc.py b/Questions/deploy/src/backend/crypto/enc.py
+index cde6a8b..8ac8cd7 100644
+--- a/Questions/deploy/src/backend/crypto/enc.py
++++ b/Questions/deploy/src/backend/crypto/enc.py
+@@ -3,11 +3,8 @@ from itertools import product
+ import hashlib
+ 
+ def func(R:bytes, key:bytes):
+-    Rnew=b''
+-    for i in range(8):
+-        a=bytes([R[i] ^ key[i]])
+-        a=bytes([hashlib.sha1(a).digest()[i]])
+-        Rnew+=a
++    a=bytes(rb ^ kb for rb, kb in zip(R,key))
++    Rnew=bytes([hashlib.sha1(a).digest()[:8]])
+     return Rnew
+ 
+ def frenel(text:bytes, key:bytes):
+diff --git a/Questions/plan.txt b/Questions/plan.txt
+deleted file mode 100644
+index befdc60..0000000
+--- a/Questions/plan.txt
++++ /dev/null
+
