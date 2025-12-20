@@ -1,9 +1,12 @@
 # auth/dependencies.py
 from fastapi import Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from database.db import SessionLocal
 from models.user import User
-from jwt import decode_token
+from crypto.myjwt import decode_token
+
+security = HTTPBearer()
 
 def get_db():
     db = SessionLocal()
@@ -12,7 +15,11 @@ def get_db():
     finally:
         db.close()
 
-def get_current_user(token: str, db: Session = Depends(get_db)) -> User:
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+) -> User:
+    token = credentials.credentials  # ← токен из заголовка Authorization
     payload = decode_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")

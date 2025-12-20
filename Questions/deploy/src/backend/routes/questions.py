@@ -3,14 +3,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
-
+from datetime import datetime
 from database.db import SessionLocal
 from models.user import User
 from models.question import Question
 from schemas.questions import QuestionCreate, QuestionAnswer, QuestionForMe
 from crypto.chek_token import get_current_user 
 
-router = APIRouter(prefix="/questions", tags=["questions"])
+router = APIRouter(tags=["questions"])
 
 def get_db():
     db = SessionLocal()
@@ -55,7 +55,7 @@ def get_my_questions(
 @router.put("/{question_id}/answer")
 def answer_question(
     question_id: int,
-    answer_data: QuestionAnswer,  # ← есть ":"
+    answer_data: QuestionAnswer,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -68,5 +68,6 @@ def answer_question(
         raise HTTPException(status_code=400, detail="Already answered")
 
     question.answer = answer_data.answer
+    question.answered_at = datetime.utcnow()  # ← УСТАНОВИТЕ ВРЕМЯ ОТВЕТА
     db.commit()
     return {"message": "Answer saved"}

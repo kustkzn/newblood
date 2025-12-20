@@ -2,7 +2,7 @@ import os
 import time
 import uuid
 from jose import jwt, JWTError
-
+from passlib.context import CryptContext
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
@@ -28,3 +28,14 @@ def decode_token(token: str) -> dict | None:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
         return None
+    
+
+
+# Настройка хэширования
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)

@@ -1,4 +1,4 @@
-from Crypto.Util.Padding import pad
+from Cryptodome.Util.Padding import pad
 from itertools import product
 import hashlib
 
@@ -24,9 +24,9 @@ def frenel(text:bytes, key:bytes):
         ciphertext+=L+R
     return ciphertext.hex()
         
-def encrypt(question:str, key:str):
-    key=key.encode()
+def spesial_encrypt(question:str, key:str):
+    key=pad(key.encode(), 8)
     question=question.encode()
     chipherquestion=frenel(question, key)
-    return chipherquestion.hex()
+    return chipherquestion
 

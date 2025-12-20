@@ -1,0 +1,47 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass      # ← пароль root
+      MYSQL_DATABASE: forum_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: mysql+pymysql://root:rootpass@db:3306/forum_db  
+      SECRET_KEY: your-super-secret-key-change-in-production
+    depends_on:
+      - db
+    # Ждём запуск MySQL
+    command: >
+      sh -c "
+        echo 'Ждём запуск MySQL...' &&
+        sleep 15 &&
+        echo 'Запуск бэкенда...' &&
+        uvicorn main:app --host 0.0.0.0 --port 8000
+      "
+
+  frontend:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src/frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
