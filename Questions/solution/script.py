@@ -1,72 +1,95 @@
-from Crypto.Util.Padding import pad
+import requests
 from itertools import product
-import hashlib
+class ForumClient:
+    def __init__(self, base_url="http://localhost:8000"):
+        self.base_url = base_url
+        self.session = requests.Session()  # сохраняет cookies (хотя JWT — stateless)
+        self.token = None
 
-def get_key_word(user:str): 
-    key='' #TODO
-    return key
+    def _set_auth_header(self):
+        if self.token:
+            self.session.headers.update({"Authorization": f"Bearer {self.token}"})
+        else:
+            self.session.headers.pop("Authorization", None)
 
-def func(R:bytes, key:bytes):
-    Rnew=b''
-    for i in range(8):
-        a=bytes([R[i] ^ key[i]])
-        a=bytes([hashlib.sha1(a).digest()[i]])
-        Rnew+=a
-    return Rnew
+    def register(self, username, password, keyword):
+        """Регистрация нового пользователя"""
+        response = self.session.post(
+            f"{self.base_url}/auth/register",
+            json={"username": username, "password": password, "keyword": keyword}
+        )
+        response.raise_for_status()
+        return response.json()
 
-def frenel(text:bytes, key:bytes):
-    if len(text)%16!=0:
-        text=pad(text, 16)
-    ciphertext=b''
-    for i in range(0, len(text), 16):
-        L=text[i:i+8]
-        R=text[i+8:i+16]
-        for j in range(8):
-            keyj=key[-j:]+key[:-j]
-            R=func(R, keyj)
-            L = bytes(lb ^ rb for lb, rb in zip(L, R))
-        ciphertext+=L+R
-    return ciphertext.hex()
-        
+    def login(self, username, password):
+        """Вход и сохранение токена"""
+        response = self.session.post(
+            f"{self.base_url}/auth/login",
+            json={"username": username, "password": password}
+        )
+        response.raise_for_status()
+        self.token = response.json()["access_token"]
+        self._set_auth_header()  # устанавливаем заголовок для последующих запросов
+        return self.token
+
+    def ask_question(self, recipient_id, text):
+        """Отправка вопроса (требует авторизации)"""
+        response = self.session.post(
+            f"{self.base_url}/questions",
+            json={"recipient_id": recipient_id, "text": text}
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def get_my_questions(self):
+        """Получение входящих вопросов (требует авторизации)"""
+        response = self.session.get(f"{self.base_url}/questions/my")
+        response.raise_for_status()
+        return response.json()
+
+    def get_user_profile(self, user_id):
+        """Просмотр профиля другого пользователя"""
+        response = self.session.get(f"{self.base_url}/users/{user_id}")
+        response.raise_for_status()
+        return response.json()
+
+    def logout(self):
+        """Выход (опционально)"""
+        if self.token:
+            self.session.post(f"{self.base_url}/auth/logout")
+            self.token = None
+            self._set_auth_header()
 
 
-def encrypt(question:str, user:str):
-    key=(get_key_word(user)).encode()
-    question=question.encode()
-    chipherquestion=frenel(question, key)
-    return chipherquestion.hex()
-
-
-#Flag format kustkzn{16 символов}
-
-text=b'kustkzn{ass_is_big_as_di}'
-key=b'slowDOWN'
-print(frenel(text, key))
-
-cipher=frenel(text, key)
-
-
-def attack(ciphertext):
-    cipher=bytes.fromhex(ciphertext)
-    spis=list('1234567890_{}asdfghjklzxcvbnmqwertyuiopZXCVBNMASDFGHJKLQWERTYUIOP')
-    flag=['']*25
-    for i in spis: # восстановим первый блок
-        pt=i.encode()*16
-        ct=bytes.fromhex(frenel(pt, key))
-        for j in range(8, 16):
-            if ct[j]==cipher[j] and (bytes([pt[j]^ct[j-8]^cipher[j-8]]))==bytes([b'kustkzn{'[j-8]]):
-                flag[j]=flag[j]+i
-    for i in range(8):
-        flag[i]='kustkzn{'[i]
-    # восстановим второй блок 
-    pt=b'a'*24+b'}'
-    ct=bytes.fromhex(frenel(pt, key))
-    for j in range(16, 24):
-        flag[j]=bytes([pt[j]^ct[j]^cipher[j]]).decode()
-    flag[24]='}'
-    return flag
+def attack(userid):
+    session=ForumClient()
+    username='random_nickname3'
+    password='random_password'
+    keyword='no_matter'
+    session.register(username, password, keyword)
+    session.login(username, password)
+    l=session.get_user_profile(userid)
+    chiphertext=bytes.fromhex(l['questions_received'][-1]['text'])
+    blocks=len(chiphertext)//16
+    spis=list('zxcvbnmasdfghjklqwertyuiop1234567890{}_ ?ZXCVBNMASDFGHJKLQWERTYUIOP')
+    text=['']*(16*blocks)
+    #Обработка символов
+    for symbol in spis:
+        pt=symbol*(16*blocks)
+        session.ask_question(userid, pt)
+        l=session.get_user_profile(userid)
+        ct=bytes.fromhex(l['questions_received'][-1]['text'])
+        for i in range(blocks):
+            for j in range(8, 16):
+                if ct[16*i+j]==chiphertext[16*i+j] and (bytes([pt.encode()[j-8+16*i]^ct[j-8+16*i]^chiphertext[j-8+16*i]])) in b'zxcvbnmasdfghjklqwertyuiop1234567890{}_ ?ZXCVBNMASDFGHJKLQWERTYUIOP':
+                    text[16*i+j]=text[16*i+j]+symbol
+                    text[j-8+16*i]=text[j-8+16*i]+(bytes([pt.encode()[j-8+16*i]^ct[j-8+16*i]^chiphertext[j-8+16*i]])).decode()
     
-flag=attack(cipher)
+    for p in  product(*[list(s) for s in text]):
+        print(''.join(list(p)))
+    
 
-for p in  product(*[list(s) for s in flag]):
-    print(''.join(list(p)))
+
+
+#Атакуем последний вопрос пользователя с id 1
+attack(1)
