@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Password Vault</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #fafafa;
+            color: #333;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        input, button, select {
+            padding: 10px;
+            margin: 6px 0;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .hidden {
+            display: none;
+        }
+        .error {
+            color: #e74c3c;
+            margin-top: 8px;
+        }
+        .success {
+            color: #27ae60;
+            margin-top: 8px;
+            word-break: break-all;
+        }
+        code {
+            background: #f1f1f1;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Password Vault</h1>
+
+    <!-- Auth -->
+    <div id="auth">
+        <h2>Register</h2>
+        <input type="text" id="regUser" placeholder="Username" minlength="3" required>
+        <input type="password" id="regPass" placeholder="Password" minlength="6" required>
+        <button onclick="register()">Register</button>
+
+        <h2>Login</h2>
+        <input type="text" id="loginUser" placeholder="Username" required>
+        <input type="password" id="loginPass" placeholder="Password" required>
+        <button onclick="login()">Login</button>
+        <div id="authMsg"></div>
+    </div>
+
+    <!-- Main UI -->
+    <div id="vault" class="hidden">
+        <h2>Welcome, <span id="username"></span>!</h2>
+        <button onclick="logout()">Logout</button>
+
+        <h3>Save Password</h3>
+        <select id="service">
+            <option value="facebook">Facebook</option>
+            <option value="instagram">Instagram</option>
+            <option value="twitter">Twitter</option>
+            <option value="vk">VK</option>
+            <option value="custom">Other</option>
+        </select>
+        <input type="text" id="customService" placeholder="Custom service name" class="hidden">
+        <input type="password" id="password" placeholder="Password to store" required>
+        <button onclick="savePassword()">Save</button>
+        <div id="saveMsg"></div>
+
+        <h3>View Password (try SQL injection in field below)</h3>
+        <input type="text" id="viewService" placeholder="e.g. instagram">
+        <button onclick="viewPassword()">View Decrypted Password</button>
+        <div id="viewMsg"></div>
+    </div>
+
+    <script>
+        let token = localStorage.getItem('token');
+        let username = localStorage.getItem('username');
+
+        if (token && username) {
+            document.getElementById('auth').classList.add('hidden');
+            document.getElementById('vault').classList.remove('hidden');
+            document.getElementById('username').textContent = username;
+        }
+
+        // Custom service input toggle
+        document.getElementById('service').addEventListener('change', function() {
+            const customInput = document.getElementById('customService');
+            if (this.value === 'custom') {
+                customInput.classList.remove('hidden');
+            } else {
+                customInput.classList.add('hidden');
+                customInput.value = '';
+            }
+        });
+
+        // ================== AUTH ==================
+        async function register() {
+            const user = document.getElementById('regUser').value.trim();
+            const pass = document.getElementById('regPass').value;
+            if (!user || !pass) return;
+
+            try {
+                const res = await fetch('/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: user, password: pass})
+                });
+                document.getElementById('authMsg').innerHTML = 
+                    res.ok ? '<div class="success">Registered! Please log in.</div>' : 
+                             '<div class="error">Registration failed</div>';
+            } catch (e) {
+                document.getElementById('authMsg').innerHTML = '<div class="error">Network error</div>';
+            }
+        }
+
+        async function login() {
+            const user = document.getElementById('loginUser').value.trim();
+            const pass = document.getElementById('loginPass').value;
+            if (!user || !pass) return;
+
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: user, password: pass})
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('username', user);
+                    location.reload();
+                } else {
+                    document.getElementById('authMsg').innerHTML = '<div class="error">Invalid credentials</div>';
+                }
+            } catch (e) {
+                document.getElementById('authMsg').innerHTML = '<div class="error">Network error</div>';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            location.reload();
+        }
+
+        // ================== PASSWORD VAULT ==================
+        async function savePassword() {
+            const serviceSel = document.getElementById('service').value;
+            const custom = document.getElementById('customService').value.trim();
+            const service = serviceSel === 'custom' ? custom : serviceSel;
+            const password = document.getElementById('password').value;
+
+            if (!service || !password) {
+                document.getElementById('saveMsg').innerHTML = '<div class="error">All fields required</div>';
+                return;
+            }
+
+            try {
+                const res = await fetch('/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    // 🔑 Правильное имя поля: "password"
+                    body: JSON.stringify({service, password})
+                });
+
+                if (res.ok) {
+                    document.getElementById('saveMsg').innerHTML = '<div class="success">Password saved!</div>';
+                    document.getElementById('password').value = '';
+                } else {
+                    const errorText = await res.text();
+                    document.getElementById('saveMsg').innerHTML = 
+                        `<div class="error">Save failed: ${errorText || res.status}</div>`;
+                }
+            } catch (e) {
+                document.getElementById('saveMsg').innerHTML = '<div class="error">Network error</div>';
+            }
+        }
+
+        async function viewPassword() {
+            const service = document.getElementById('viewService').value.trim();
+            if (!service) {
+                document.getElementById('viewMsg').innerHTML = '<div class="error">Service name required</div>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/view?service=${encodeURIComponent(service)}`, {
+                    headers: {'Authorization': 'Bearer ' + token}
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    // ✅ Теперь data.password — это расшифрованный пароль!
+                    document.getElementById('viewMsg').innerHTML = 
+                        `<div class="success"><strong>Password:</strong> <code>${data.password}</code></div>`;
+                } else {
+                    const errorText = await res.text();
+                    document.getElementById('viewMsg').innerHTML = 
+                        `<div class="error">Error: ${res.status} ${errorText || 'Not found'}</div>`;
+                }
+            } catch (e) {
+                document.getElementById('viewMsg').innerHTML = '<div class="error">Network error</div>';
+            }
+        }
+    </script>
+</body>
+</html>

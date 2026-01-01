@@ -1,0 +1,33 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: vault
+      MYSQL_USER: vaultuser
+      MYSQL_PASSWORD: vaultpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: vaultuser
+      DB_PASS: vaultpass
+      DB_NAME: vault
+      JWT_SECRET: supersecretjwtsigningkey123!
+      SECRET_KEY: 0CheNb0l5ho1sLOzhN1Yp4R0l5aM
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
