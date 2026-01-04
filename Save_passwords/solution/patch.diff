@@ -1,0 +1,100 @@
+diff --git a/Save_passwords/deploy/src/backend/crypto/encrypt.go b/Save_passwords/deploy/src/backend/crypto/encrypt.go
+index 74477c5..fd39bb7 100644
+--- a/Save_passwords/deploy/src/backend/crypto/encrypt.go
++++ b/Save_passwords/deploy/src/backend/crypto/encrypt.go
+@@ -25,8 +25,8 @@ func Init(key string) {
+ 	a = big.NewInt(3)
+ 	b = big.NewInt(9)
+ 
+-	Gx, _ = new(big.Int).SetString("115423119360425591167519108349272384530", 10)
+-	Gy, _ = new(big.Int).SetString("26739966749909391609878417468245881872", 10)
++	Gx, _ = new(big.Int).SetString("138170092136019586415011594002367979089", 10)
++	Gy, _ = new(big.Int).SetString("327795263502241173845020333917976405302", 10)
+ }
+ 
+ // ============================================================================
+@@ -192,7 +192,7 @@ func aesECBDecrypt(key, ciphertext []byte) ([]byte, error) {
+ 
+ 	padding := int(plaintext[len(plaintext)-1])
+ 	if padding < 1 || padding > aes.BlockSize {
+-		return []byte(hex.EncodeToString(plaintext)), nil
++		return nil, fmt.Errorf("invalid padding")
+ 	}
+ 	return plaintext[:len(plaintext)-padding], nil
+ }
+diff --git a/Save_passwords/deploy/src/backend/routes/handlers.go b/Save_passwords/deploy/src/backend/routes/handlers.go
+index c78105c..fde812a 100644
+--- a/Save_passwords/deploy/src/backend/routes/handlers.go
++++ b/Save_passwords/deploy/src/backend/routes/handlers.go
+@@ -4,7 +4,6 @@ package routes
+ import (
+ 	"database/sql"
+ 	"encoding/json"
+-	"fmt"
+ 	"log"
+ 	"net/http"
+ 	"password-vault/crypto"
+@@ -137,7 +136,6 @@ func SavePassword(w http.ResponseWriter, r *http.Request) {
+ 	w.WriteHeader(http.StatusCreated)
+ }
+ 
+-// ViewPassword — УЯЗВИМЫЙ: service подставляется напрямую в SQL
+ func ViewPassword(w http.ResponseWriter, r *http.Request) {
+ 	if r.Method == "OPTIONS" {
+ 		return
+@@ -156,34 +154,30 @@ func ViewPassword(w http.ResponseWriter, r *http.Request) {
+ 		return
+ 	}
+ 
+-	// 🔥 УЯЗВИМОСТЬ: прямая подстановка service в SQL
+-	query := fmt.Sprintf("SELECT encrypted_password FROM passwords WHERE user_id = %d AND service = '%s'", userID, service)
+-	rows, err := database.DB.Query(query)
++	var encryptedHex string
++	err = database.DB.QueryRow(
++		"SELECT encrypted_password FROM passwords WHERE user_id = ? AND service = ?",
++		userID, service, // ← значения передаются отдельно, не встраиваются в SQL
++	).Scan(&encryptedHex)
++
+ 	if err != nil {
+-		log.Printf("SQL error: %v", err)
+-		http.Error(w, "Query error", http.StatusInternalServerError)
++		if err == sql.ErrNoRows {
++			http.Error(w, "Password not found", http.StatusNotFound)
++		} else {
++			log.Printf("DB error: %v", err)
++			http.Error(w, "Database error", http.StatusInternalServerError)
++		}
+ 		return
+ 	}
+-	defer rows.Close()
+-
+-	if rows.Next() {
+-		var encryptedHex string
+-		if err := rows.Scan(&encryptedHex); err != nil {
+-			http.Error(w, "Scan error", http.StatusInternalServerError)
+-			return
+-		}
+ 
+-		// Расшифровка
+-		plaintext, err := crypto.DecryptPassword(encryptedHex)
+-		if err != nil {
+-			log.Printf("Decryption failed: %v", err)
+-			http.Error(w, "Decryption error", http.StatusInternalServerError)
+-			return
+-		}
+-
+-		w.Header().Set("Content-Type", "application/json")
+-		json.NewEncoder(w).Encode(map[string]string{"password": plaintext})
+-	} else {
+-		http.Error(w, "Password not found", http.StatusNotFound)
++	// Расшифровка
++	plaintext, err := crypto.DecryptPassword(encryptedHex)
++	if err != nil {
++		log.Printf("Decryption failed: %v", err)
++		http.Error(w, "Decryption error", http.StatusInternalServerError)
++		return
+ 	}
++
++	w.Header().Set("Content-Type", "application/json")
++	json.NewEncoder(w).Encode(map[string]string{"password": plaintext})
+ }
