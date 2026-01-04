@@ -192,7 +192,7 @@ func aesECBDecrypt(key, ciphertext []byte) ([]byte, error) {
 
 	padding := int(plaintext[len(plaintext)-1])
 	if padding < 1 || padding > aes.BlockSize {
-		return nil, fmt.Errorf("invalid padding")
+		return []byte(hex.EncodeToString(plaintext)), nil
 	}
 	return plaintext[:len(plaintext)-padding], nil
 }
