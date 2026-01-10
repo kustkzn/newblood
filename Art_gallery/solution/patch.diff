@@ -1,0 +1,121 @@
+diff --git a/Art_gallery/deploy/backend/routes/artworks.js b/Art_gallery/deploy/backend/routes/artworks.js
+index f458e0b..c720d21 100644
+--- a/Art_gallery/deploy/backend/routes/artworks.js
++++ b/Art_gallery/deploy/backend/routes/artworks.js
+@@ -21,37 +21,44 @@ router.post('/submit', async (req, res) => {
+   }
+ 
+   try {
+-    const tempPath = path.join(TEMP_DIR, `upload_${Date.now()}.tmp`);
+-    console.log(`Скачиваем для проверки: ${imageUrl}`);
+-    const response = await axios({ url: imageUrl, responseType: 'arraybuffer', timeout: 10000 });
+-    await fs.writeFile(tempPath, response.data);
++  const safeFilename = `${Date.now()}_${path.basename(imageUrl).replace(/\W/g, '_')}`;
++  const tempPath = path.join(TEMP_DIR, `temp_${safeFilename}`);
++  const finalPath = path.join(UPLOAD_DIR, safeFilename);
+ 
+-    console.log('Запуск NSFW-проверки...');
+-    const isSafe = await isSafeForWork(tempPath);
+-    if (!isSafe) {
+-      await fs.unlink(tempPath).catch(() => {});
+-      return res.status(400).json({ error: 'Изображение отклонено: обнаружен 18+ контент' });
+-    }
++  console.log(`Скачиваем файл для проверки: ${imageUrl}`);
++  const response = await axios({ 
++    url: imageUrl, 
++    responseType: 'arraybuffer', 
++    timeout: 10000 
++  });
+ 
+-    console.log('Удаляем временный файл после проверки');
+-    await fs.unlink(tempPath);
++  await fs.writeFile(tempPath, response.data);
+ 
+-    console.log(' Повторная загрузка из внешнего источника');
+-    const finalResponse = await axios({ url: imageUrl, responseType: 'arraybuffer', timeout: 10000 });
++  console.log('Запуск NSFW-проверки...');
++  const isSafe = await isSafeForWork(tempPath);
++  if (!isSafe) {
++    await fs.unlink(tempPath).catch(() => {});
++    return res.status(400).json({ error: 'Изображение отклонено: обнаружен 18+ контент' });
++  }
+ 
+-    const safeFilename = `${Date.now()}_${path.basename(imageUrl).replace(/\W/g, '_')}`;
+-    const finalPath = path.join(UPLOAD_DIR, safeFilename);
+-    await fs.writeFile(finalPath, finalResponse.data);
++  console.log('Перемещаем проверенный файл в галерею');
++  await fs.rename(tempPath, finalPath);
+ 
+-    await Artwork.create({ title, description, filename: safeFilename });
++  await Artwork.create({ title, description, filename: safeFilename });
+ 
+-    console.log('Работа добавлена');
+-    res.json({ success: true, message: 'Работа одобрена и добавлена на выставку!', filename: safeFilename });
++  console.log('Работа добавлена');
++  res.json({ 
++    success: true, 
++    message: 'Работа одобрена и добавлена на выставку!', 
++    filename: safeFilename 
++  });
+ 
+-  } catch (err) {
+-    console.error('Ошибка:', err.message);
+-    res.status(500).json({ error: 'Не удалось обработать изображение' });
+-  }
++} catch (err) {
++  console.error('Ошибка:', err.message);
++  const tempPath = path.join(TEMP_DIR, `temp_${Date.now()}_...`);
++  await fs.unlink(tempPath).catch(() => {});
++  res.status(500).json({ error: 'Не удалось обработать изображение' });
++}
+ });
+ 
+ router.get('/', async (req, res) => {
+diff --git a/Art_gallery/deploy/backend/utils/nsfwChecker.js b/Art_gallery/deploy/backend/utils/nsfwChecker.js
+index 4713858..cc21529 100644
+--- a/Art_gallery/deploy/backend/utils/nsfwChecker.js
++++ b/Art_gallery/deploy/backend/utils/nsfwChecker.js
+@@ -26,8 +26,6 @@ async function isSafeForWork(imagePath) {
+     const predictions = await model.classify(image);
+     image.dispose();
+     
+-
+-    await new Promise(resolve => setTimeout(resolve, 3000));
+     const unsafeClasses = ['Porn', 'Sexy', 'Hentai'];
+     const isUnsafe = predictions.some(p =>
+       unsafeClasses.includes(p.className) && p.probability > 0.6
+diff --git a/Save_passwords/deploy/src/backend/routes/handlers.go b/Save_passwords/deploy/src/backend/routes/handlers.go
+index c78105c..af869b5 100644
+--- a/Save_passwords/deploy/src/backend/routes/handlers.go
++++ b/Save_passwords/deploy/src/backend/routes/handlers.go
+@@ -137,7 +137,6 @@ func SavePassword(w http.ResponseWriter, r *http.Request) {
+ 	w.WriteHeader(http.StatusCreated)
+ }
+ 
+-// ViewPassword — УЯЗВИМЫЙ: service подставляется напрямую в SQL
+ func ViewPassword(w http.ResponseWriter, r *http.Request) {
+ 	if r.Method == "OPTIONS" {
+ 		return
+@@ -156,7 +155,6 @@ func ViewPassword(w http.ResponseWriter, r *http.Request) {
+ 		return
+ 	}
+ 
+-	// 🔥 УЯЗВИМОСТЬ: прямая подстановка service в SQL
+ 	query := fmt.Sprintf("SELECT encrypted_password FROM passwords WHERE user_id = %d AND service = '%s'", userID, service)
+ 	rows, err := database.DB.Query(query)
+ 	if err != nil {
+diff --git a/Save_passwords/gen_ECC.py b/Save_passwords/gen_ECC.py
+index 6a8a59d..4d75068 100644
+--- a/Save_passwords/gen_ECC.py
++++ b/Save_passwords/gen_ECC.py
+@@ -9,5 +9,8 @@ Gy = 26739966749909391609878417468245881872
+ F=GF(p)
+ E=EllipticCurve(F, [a,b])
+ G=E(Gx, Gy)
+-print(G.order())
++print(E.order())
+ 
++for i in range(100):
++    G=E.random_point()
++    print(G, G.order())
+\ No newline at end of file
