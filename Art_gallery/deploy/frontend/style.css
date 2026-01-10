@@ -1,4 +1,3 @@
-/* Минимализм + тёмная тема */
 :root {
   --bg: #121212;
   --card-bg: #1e1e1e;
@@ -27,7 +26,6 @@ body {
   padding: 24px;
 }
 
-/* Шапка */
 header {
   display: flex;
   justify-content: space-between;
@@ -57,7 +55,6 @@ header h1 {
   justify-content: center;
 }
 
-/* Галерея */
 .gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -95,13 +92,13 @@ header h1 {
   word-break: break-word;
 }
 
-/* Оверлей и форма — изначально скрыты через display: none */
+
 #overlay,
 #formPanel {
   display: none;
 }
 
-/* Оверлей */
+
 #overlay {
   position: fixed;
   top: 0;
@@ -112,7 +109,7 @@ header h1 {
   z-index: 1000;
 }
 
-/* Форма */
+
 #formPanel {
   position: fixed;
   top: 0;
@@ -151,7 +148,7 @@ header h1 {
   justify-content: center;
 }
 
-/* Поля формы */
+
 #formPanel input,
 #formPanel textarea {
   width: 100%;
@@ -191,7 +188,6 @@ header h1 {
   display: none;
 }
 
-/* Загрузка и пусто */
 .loading, .empty {
   grid-column: 1 / -1;
   text-align: center;
@@ -200,7 +196,7 @@ header h1 {
   font-style: italic;
 }
 
-/* Адаптив */
+
 @media (max-width: 768px) {
   .container { padding: 16px; }
   .gallery { grid-template-columns: 1fr; gap: 24px; }

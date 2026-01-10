@@ -12,13 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // Открыть форму
   openBtn.addEventListener('click', () => {
     formPanel.style.display = 'block';
     overlay.style.display = 'block';
   });
 
-  // Закрыть форму
   const closeForm = () => {
     formPanel.style.display = 'none';
     overlay.style.display = 'none';
@@ -29,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (closeBtn) closeBtn.addEventListener('click', closeForm);
   overlay.addEventListener('click', closeForm);
 
-  // Отправка формы
   if (artForm && galleryGrid) {
     artForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -65,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Сообщение
   function showMessage(text, isSuccess) {
     if (!formMessage) return;
     formMessage.textContent = text;
@@ -76,11 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
     formMessage.style.color = isSuccess ? '#a5d6a7' : '#ffcdd2';
   }
 
-  // Экранирование HTML
   const escapeHtml = (str) =>
     str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
 
-  // Загрузка галереи
   async function loadGallery() {
     if (!galleryGrid) return;
     galleryGrid.innerHTML = '<p class="loading">loading...</p>';
