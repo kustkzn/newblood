@@ -1,0 +1,209 @@
+/* Минимализм + тёмная тема */
+:root {
+  --bg: #121212;
+  --card-bg: #1e1e1e;
+  --text: #f0f0f0;
+  --text-secondary: #b0b0b0;
+  --accent: #4a90e2;
+  --border: #333;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Шапка */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+  font-weight: 400;
+  font-size: 2rem;
+  text-transform: lowercase;
+}
+
+.add-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Галерея */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 32px;
+}
+
+.artwork-card {
+  background: var(--card-bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.artwork-img {
+  width: 100%;
+  height: 350px;
+  object-fit: cover;
+  display: block;
+}
+
+.artwork-info {
+  padding: 16px;
+}
+
+.artwork-info h3 {
+  font-weight: 500;
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.artwork-info p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* Оверлей и форма — изначально скрыты через display: none */
+#overlay,
+#formPanel {
+  display: none;
+}
+
+/* Оверлей */
+#overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+}
+
+/* Форма */
+#formPanel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 420px;
+  height: 100%;
+  background: #1a1a1a;
+  z-index: 1001;
+  padding: 32px;
+  overflow-y: auto;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.form-header h2 {
+  font-weight: 400;
+  font-size: 1.5rem;
+  text-transform: lowercase;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 2.2rem;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Поля формы */
+#formPanel input,
+#formPanel textarea {
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 20px;
+  background: #252525;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+#formPanel input::placeholder,
+#formPanel textarea::placeholder {
+  color: #666;
+}
+
+#formPanel button[type="submit"] {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+#formMessage {
+  margin-top: 20px;
+  padding: 12px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 500;
+  display: none;
+}
+
+/* Загрузка и пусто */
+.loading, .empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Адаптив */
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .gallery { grid-template-columns: 1fr; gap: 24px; }
+  .artwork-img { height: 300px; }
+  #formPanel { width: 100%; }
+}

@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:10.6    # ← MariaDB вместо MySQL
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345678
+      MYSQL_DATABASE: art_gallery
+    volumes:
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mariadb_data:/var/lib/mysql   # ← новое имя volume
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASS: 12345678
+      DB_NAME: art_gallery
+    depends_on:
+      - db
+    volumes:
+      - ./backend/public:/app/backend/public
+      - ./backend/temp:/app/backend/temp
+      - ./frontend:/app/frontend 
+volumes:
+  mariadb_data:   # ← объявляем volume

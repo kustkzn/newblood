@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>art gallery</title>
+  <link rel="stylesheet" href="/style.css?v=1">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>art gallery</h1>
+      <button id="openFormBtn" class="add-btn">+</button>
+    </header>
+
+    <main id="galleryGrid" class="gallery">
+      <p class="loading">loading...</p>
+    </main>
+  </div>
+
+  <!-- Оверлей -->
+  <div id="overlay"></div>
+
+  <!-- Панель формы -->
+  <div id="formPanel">
+    <div class="form-header">
+      <h2>new submission</h2>
+      <button id="closeFormBtn" class="close-btn">×</button>
+    </div>
+    <form id="artForm">
+      <input type="url" id="imageUrl" required placeholder="image url (public)">
+      <input type="text" id="title" required maxlength="100" placeholder="title">
+      <textarea id="description" rows="3" placeholder="description (optional)"></textarea>
+      <button type="submit">submit</button>
+    </form>
+    <div id="formMessage"></div>
+  </div>
+
+  <script src="/script.js?v=1"></script>
+</body>
+</html>
